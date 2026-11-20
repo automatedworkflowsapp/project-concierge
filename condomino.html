@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F6F8FC">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Concierge</title>
+  <link rel="icon" href="icon-180.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Concierge">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="boot" class="wrap"><div class="top"><div class="brand" id="brand"></div></div><div class="loading" id="bootMsg">Caricamento…</div></div>
+<div id="page" class="hidden">
+<div class="wrap">
+  <div class="top"><div class="brand" id="brand"></div><button class="info" id="infoBtn" aria-label="Come funziona"><i class="ti ti-info-small"></i></button></div>
+  <div id="help" class="card hidden"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px">
+    <div><h1 id="hello"></h1><p class="sub" id="detail"></p></div>
+    <span class="pill m" id="live">● Connessione…</span>
+  </div>
+
+  <button class="btn ghost" id="sound" style="margin-top:14px"><i class="ti ti-volume"></i> Attiva suoneria su questo telefono</button>
+
+  <!-- APRI CON PIN -->
+  <div class="card" id="pinCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" id="pinToggle">
+      <h3 style="margin:0"><i class="ti ti-grid-dots"></i> Apri il portone con un PIN</h3>
+      <i class="chev ti ti-chevron-down" id="pinChev"></i>
+    </div>
+    <div id="pinBody" class="hidden" style="margin-top:12px">
+      <div class="loc" id="loc"><i class="ti ti-map-pin"></i> Serve essere davanti al portone</div>
+      <div class="pinbox" id="pinbox"></div>
+      <div class="keypad" id="keypad"></div>
+      <button class="btn" id="pinGo" style="margin-top:14px" disabled>Apri il portone</button>
+      <div id="pinRes" class="status hidden" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- CHIAMATA IN ARRIVO -->
+  <div id="callCard" class="card alert hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:0" id="ctitle"><i class="ti ti-bell-ringing" style="color:var(--accent)"></i> Visitatore al portone</h3>
+      <span class="pill b" id="ccount"></span>
+    </div>
+    <div class="muted" id="cmeta" style="margin-top:4px"></div>
+    <div id="cvideo" class="hidden">
+      <div class="vbox">
+        <div class="vmsg" id="cvmsg"><i class="ti ti-video"></i><span>Collego il video…</span></div>
+        <video id="cvRemote" class="big hidden" playsinline autoplay muted></video>
+        <video id="cvLocal" class="pip mirror hidden" playsinline autoplay muted></video>
+        <span class="vtag" id="cvtag">Anteprima · non ti vede né ti sente</span>
+      </div>
+      <audio id="cvAudio" autoplay playsinline muted></audio>
+    </div>
+    <img id="cphoto" class="photo hidden" alt="Foto del visitatore">
+    <div id="nophoto" class="muted hidden" style="margin:12px 0">Il visitatore non ha scattato una foto.</div>
+    <div class="row3" id="cbtns" style="margin-top:12px">
+      <button class="btn red" id="deny"><i class="ti ti-x"></i>Nega</button>
+      <button class="btn ghost hidden" id="pick"><i class="ti ti-video"></i>Rispondi</button>
+      <button class="btn green" id="open"><i class="ti ti-lock-open"></i>Apri</button>
+    </div>
+    <div id="cres" class="status hidden" style="margin:8px 0 2px"></div>
+  </div>
+
+  <!-- CHIAMATA IN USCITA (persona → persona) -->
+  <div id="outCall" class="card hidden">
+    <div class="vbar" style="margin-top:0"><div><div class="t" id="otitle"></div><div class="s" id="osub"></div></div><span class="pill b" id="ocount"></span></div>
+    <div class="vbox">
+      <div class="vmsg" id="omsg"><i class="ti ti-video"></i><span>Attivo la fotocamera…</span></div>
+      <video id="oRemote" class="big hidden" playsinline autoplay muted></video>
+      <video id="oLocal" class="big mirror" playsinline autoplay muted></video>
+      <span class="vtag" id="otag">Tu</span>
+    </div>
+    <audio id="oAudio" autoplay playsinline></audio>
+    <button class="btn red" id="ohang" style="margin-top:12px"><i class="ti ti-phone-off"></i> Riaggancia</button>
+  </div>
+
+  <!-- RUBRICA INTERNA -->
+  <div class="card" id="peopleCard">
+    <h3><i class="ti ti-video"></i> Videochiama una persona</h3>
+    <input id="pq" type="text" placeholder="Cerca per nome" autocomplete="off">
+    <div id="plist2" style="margin-top:8px"></div>
+  </div>
+
+  <!-- NUOVO PASS -->
+  <div class="card">
+    <h3>Crea un pass temporaneo</h3>
+    <label for="plabel" style="margin-top:0">Per chi è?</label>
+    <input id="plabel" type="text" placeholder="Es. Idraulico, Marta, Babysitter" maxlength="40">
+    <label>Fascia oraria</label>
+    <div>
+      <span class="chip" data-pre="2h">Prossime 2 ore</span>
+      <span class="chip" data-pre="today">Oggi 9–19</span>
+      <span class="chip" data-pre="tomorrow">Domani 9–19</span>
+      <span class="chip" data-pre="week">7 giorni</span>
+    </div>
+    <div class="row">
+      <div><label for="pfrom">Dalle</label><input type="datetime-local" id="pfrom"></div>
+      <div><label for="pto">Alle</label><input type="datetime-local" id="pto"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;color:var(--text);font-size:15px;margin:14px 0">
+      <input type="checkbox" id="psingle" checked style="width:20px;height:20px"> Valido per un solo ingresso
+    </label>
+    <button class="btn" id="pgo">Genera PIN</button>
+
+    <div id="pnew" class="hidden" style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+      <div class="muted center">PIN per <b id="pnewLabel"></b></div>
+      <div class="big-pin" id="pnewPin"></div>
+      <div class="muted center" id="pnewWin" style="margin-bottom:12px"></div>
+      <div class="row">
+        <a class="btn green" id="pnewWa" target="_blank" rel="noopener">Invia su WhatsApp</a>
+        <button class="btn ghost" id="pnewCopy">Copia</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>I tuoi pass</h3>
+    <div id="plist"><p class="muted">Caricamento…</p></div>
+  </div>
+
+  <div class="card">
+    <h3>Ultimi eventi</h3>
+    <div id="log"><p class="muted">Caricamento…</p></div>
+  </div>
+</div>
+</div>
+<script src="https://unpkg.com/@daily-co/daily-js@0.95.0/dist/daily.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+var BOOT;
+function main() {
+window.HELP = '<p class="muted"><a href="index.html?v=1">Apri la pagina citofono (vista visitatore)</a></p><p class="muted">Quando qualcuno ti chiama dal portone ricevi un WhatsApp e questa pagina suona: vedi la foto del visitatore e premi Apri o Nega. Con i pass generi un PIN a tempo da mandare a ospiti e fornitori.</p>';
+var S = { token: BOOT.token, linkCall: BOOT.callId || '', current: null, deadline: 0, busy: false,
+  audio: null, soundOn: false, ringTimer: null, endTimer: null, lastPass: null };
+
+$('#hello').textContent = 'Ciao, ' + BOOT.name;
+$('#detail').textContent = BOOT.building + ' · ' + (BOOT.size > 1 ? 'Famiglia ' + BOOT.surname + ' · ' : '') + BOOT.detail;
+
+// ---------- suoneria (serve un tocco per sbloccare l'audio) ----------
+$('#sound').onclick = function () {
+  try {
+    S.audio = S.audio || new (window.AudioContext || window.webkitAudioContext)();
+    S.audio.resume();
+    S.soundOn = true;
+    beep();
+    $('#sound').classList.add('hidden');
+    toast('Suoneria attiva: tieni questa pagina aperta');
+  } catch (e) { toast('Audio non disponibile su questo browser'); }
+};
+function beep() {
+  if (!S.soundOn || !S.audio) return;
+  [0, 0.25].forEach(function (t) {
+    var o = S.audio.createOscillator(), g = S.audio.createGain();
+    o.frequency.value = 880; o.type = 'sine';
+    g.gain.setValueAtTime(0.0001, S.audio.currentTime + t);
+    g.gain.exponentialRampToValueAtTime(0.4, S.audio.currentTime + t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, S.audio.currentTime + t + 0.2);
+    o.connect(g); g.connect(S.audio.destination);
+    o.start(S.audio.currentTime + t); o.stop(S.audio.currentTime + t + 0.22);
+  });
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+// ---------- chiamate ----------
+function poll() {
+  if (S.busy || document.hidden) return;
+  S.busy = true;
+  run('r_poll', S.token, S.linkCall || null).then(function (r) {
+    var c = r.call;
+    if (S.out && c && c.id !== S.out.id && !S.current) c = null;   // occupato in una chiamata in uscita
+    if (c && (c.status === 'ringing' || (c.status === 'talking' && c.by === 'te'))) {
+      showCall(c);
+    } else if (c && c.status === 'talking' && S.current && S.current.id === c.id) {
+      endCall('picked', c.by);   // ha risposto un altro familiare
+      S.linkCall = '';
+    } else {
+      if (S.current) endCall(c && c.id === S.current.id ? c.status : 'gone', c && c.by);
+      else if (S.linkCall && c) endCall(c.status, c.by);
+      S.linkCall = '';
+    }
+    $('#live').className = 'pill g'; $('#live').textContent = '● In ascolto';
+  }).catch(function (e) {
+    $('#live').className = 'pill a'; $('#live').textContent = '● Riconnessione…';
+    if (/Accesso non valido/.test(errMsg(e))) { $('#live').textContent = '● Link non valido'; clearInterval(S.pollTimer); }
+  }).then(function () { S.busy = false; });
+}
+
+function showCall(c) {
+  if (S.current && S.current.id === c.id) return;
+  S.talking = c.status === 'talking';
+  clearTimeout(S.endTimer);
+  S.current = c;
+  S.deadline = Date.now() + Math.max(0, BOOT.callTimeout - c.ageS) * 1000;
+  $('#callCard').classList.remove('hidden');
+  $('#cbtns').classList.remove('hidden');
+  $('#cres').classList.add('hidden');
+  $('#open').disabled = false; $('#deny').disabled = false;
+  $('#cmeta').textContent = (c.family ? 'Per tutta la famiglia' : 'Per te') + ' · ' + hhmm(c.created) + ' · ' +
+    (c.dist == null ? 'posizione non condivisa' : (c.dist <= BOOT.radius ? 'davanti al portone' : 'a ' + c.dist + ' m dal portone'));
+  $('#cphoto').classList.add('hidden'); $('#cphoto').removeAttribute('src');
+  $('#nophoto').classList.toggle('hidden', !!c.hasPhoto || !!c.video);
+  $('#pick').classList.toggle('hidden', !c.video || S.talking);
+  S.internal = !!c.from;
+  $('#ctitle').innerHTML = c.from
+    ? '<i class="ti ti-video" style="color:var(--accent)"></i> ' + esc(c.from) + ' ti chiama'
+    : '<i class="ti ti-bell-ringing" style="color:var(--accent)"></i> Visitatore al portone';
+  $('#open').classList.toggle('hidden', !!c.from);
+  $('#deny').innerHTML = c.from ? (S.talking ? '<i class="ti ti-phone-off"></i>Riaggancia' : '<i class="ti ti-x"></i>Rifiuta') : '<i class="ti ti-x"></i>Nega';
+  if (c.from) $('#cmeta').textContent = 'Videochiamata · ' + hhmm(c.created);
+  $('#cvideo').classList.toggle('hidden', !c.video);
+  if (c.video) startVideo(c);
+  if (c.hasPhoto) {
+    run('r_getPhoto', S.token, c.id).then(function (data) {
+      if (data && S.current && S.current.id === c.id) { $('#cphoto').src = data; $('#cphoto').classList.remove('hidden'); }
+      else $('#nophoto').classList.remove('hidden');
+    });
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  beep();
+  clearInterval(S.ringTimer);
+  S.ringTimer = setInterval(function () {
+    var left = Math.max(0, Math.round((S.deadline - Date.now()) / 1000));
+    $('#ccount').textContent = left + ' s';
+    if (left % 3 === 0 && !S.talking) beep();
+  }, 1000);
+}
+
+function startVideo(c) {
+  $('#cvmsg').classList.remove('hidden');
+  $('#cvRemote').classList.add('hidden');
+  $('#cvLocal').classList.add('hidden');
+  $('#cvtag').textContent = 'Anteprima · non ti vede né ti sente';
+  $('#cvAudio').muted = true;
+  run('r_videoJoin', S.token, c.id).then(function (v) {
+    if (!v || !S.current || S.current.id !== c.id) return;
+    S.vjoin = v;
+    return VC.join({
+      onError: function (m) { $('#cvmsg').classList.remove('hidden'); $('#cvmsg').querySelector('span').textContent = m; },
+      url: v.url, token: v.token, cam: S.talking, mic: S.talking,
+      local: $('#cvLocal'), remote: $('#cvRemote'), audio: $('#cvAudio'),
+      onRemote: function (on) {
+        $('#cvRemote').classList.toggle('hidden', !on);
+        $('#cvmsg').classList.toggle('hidden', on);
+        if (!on) $('#cvmsg').querySelector('span').textContent = 'In attesa del video del visitatore…';
+      }
+    });
+  }).catch(function (e) { $('#cvmsg').querySelector('span').textContent = errMsg(e); });
+}
+
+$('#pick').onclick = function () {
+  if (!S.current) return;
+  var a = $('#cvAudio');
+  a.muted = false; VC.unlockAudio(a);
+  if (VC.call) { VC.cam(true); VC.mic(true); }
+  else if (S.vjoin) {                              // l'anteprima non era partita: entro direttamente con video e audio
+    $('#cvmsg').querySelector('span').textContent = 'Collego il video…';
+    VC.join({
+      url: S.vjoin.url, token: S.vjoin.token, cam: true, mic: true,
+      local: $('#cvLocal'), remote: $('#cvRemote'), audio: a,
+      onError: function (m) { $('#cvmsg').classList.remove('hidden'); $('#cvmsg').querySelector('span').textContent = m; },
+      onRemote: function (on) { $('#cvRemote').classList.toggle('hidden', !on); $('#cvmsg').classList.toggle('hidden', on); }
+    }).catch(function (e) { $('#cvmsg').classList.remove('hidden'); $('#cvmsg').querySelector('span').textContent = errMsg(e); });
+  }
+  $('#cvLocal').classList.remove('hidden');
+  $('#cvtag').textContent = 'In chiamata';
+  $('#pick').classList.add('hidden');
+  if (S.internal) $('#deny').innerHTML = '<i class="ti ti-phone-off"></i>Riaggancia';
+  S.talking = true;
+  run('r_pickup', S.token, S.current.id).then(function (r) {
+    if (!r.ok) return endCall(r.status === 'talking' ? 'picked' : r.status, r.by);
+    S.deadline = Date.now() + 300 * 1000;
+  }).catch(function (e) { toast(errMsg(e)); });
+};
+
+function endCall(status, by) {
+  clearInterval(S.ringTimer);
+  S.current = null;
+  S.talking = false;
+  VC.leave();
+  ['cvRemote', 'cvLocal', 'cvAudio'].forEach(function (id) { try { $('#' + id).srcObject = null; } catch (e) {} });
+  $('#cvideo').classList.add('hidden');
+  // la foto sparisce subito dallo schermo
+  $('#cphoto').classList.add('hidden'); $('#cphoto').removeAttribute('src');
+  $('#nophoto').classList.add('hidden');
+  $('#cbtns').classList.add('hidden');
+  $('#ccount').textContent = '';
+  var M = { opened: 'Portone aperto', denied: 'Accesso negato', timeout: 'Chiamata scaduta',
+    cancelled: 'Il visitatore ha riagganciato', door_error: 'Il portone non ha risposto', gone: 'Chiamata terminata',
+    ended: 'Videochiamata conclusa' };
+  if (S.internal) M.denied = 'Chiamata rifiutata';
+  var who = by && by !== 'te' && (status === 'opened' || status === 'denied') ? ' da ' + by : '';
+  $('#cres').textContent = status === 'picked' ? 'Ha risposto ' + (by || 'un familiare') : (M[status] || 'Chiamata terminata') + who;
+  $('#cres').classList.remove('hidden');
+  $('#callCard').classList.remove('hidden');
+  clearTimeout(S.endTimer);
+  S.endTimer = setTimeout(function () { $('#callCard').classList.add('hidden'); }, 8000);
+  loadLog();
+}
+
+function answer(decision) {
+  if (!S.current) return;
+  $('#open').disabled = true; $('#deny').disabled = true;
+  run('r_answer', S.token, S.current.id, decision).then(function (r) {
+    S.linkCall = '';
+    endCall(r.status, r.by);
+  }).catch(function (e) {
+    toast(errMsg(e));
+    $('#open').disabled = false; $('#deny').disabled = false;
+  });
+}
+$('#open').onclick = function () { answer('open'); };
+$('#deny').onclick = function () { answer(S.internal && S.talking ? 'hangup' : 'deny'); };
+
+// ---------- apri con PIN (stesse regole del citofono) ----------
+var P = { pin: '', loc: null, dev: deviceId() };
+$('#pinToggle').onclick = function () {
+  var open = $('#pinBody').classList.toggle('hidden') === false;
+  $('#pinChev').className = 'chev ti ti-chevron-' + (open ? 'up' : 'down');
+  if (open && !P.loc) pinLocate();
+};
+function pinLocate() {
+  $('#loc').innerHTML = '<i class="ti ti-map-pin"></i> Verifico la tua posizione…';
+  return getLoc(12000).then(function (l) {
+    if (l && !l.err) {
+      P.loc = l;
+      $('#loc').innerHTML = '<span style="color:var(--green)"><i class="ti ti-map-pin-check"></i> Posizione verificata · ±' + Math.round(l.acc) + ' m</span>';
+    } else {
+      P.loc = null;
+      $('#loc').innerHTML = '<i class="ti ti-map-pin-off"></i> ' + (l && l.err === 1 ? 'Consenti la posizione al browser e ' : 'Posizione non disponibile. ') + '<a href="#" id="locRetry">riprova</a>';
+      $('#locRetry').onclick = function (e) { e.preventDefault(); pinLocate(); };
+    }
+    return P.loc;
+  });
+}
+$('#keypad').innerHTML = ['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(function (k) { return '<div class="key" data-k="' + k + '">' + k + '</div>'; }).join('');
+$('#keypad').querySelectorAll('.key').forEach(function (el) {
+  el.onclick = function () {
+    var k = el.dataset.k;
+    if (k === 'C') P.pin = ''; else if (k === '⌫') P.pin = P.pin.slice(0, -1); else if (P.pin.length < 6) P.pin += k;
+    renderPinBox();
+  };
+});
+function renderPinBox() {
+  var h = '';
+  for (var i = 0; i < 6; i++) h += '<span class="' + (i < P.pin.length ? 'f' : '') + '">' + (P.pin[i] || '') + '</span>';
+  $('#pinbox').innerHTML = h;
+  $('#pinGo').disabled = P.pin.length !== 6;
+}
+renderPinBox();
+$('#pinGo').onclick = function () {
+  $('#pinGo').disabled = true;
+  var show = function (ok, t) { $('#pinRes').classList.remove('hidden'); $('#pinRes').style.color = ok ? 'var(--green)' : 'var(--red)'; $('#pinRes').textContent = t; };
+  show(true, 'Verifico…'); $('#pinRes').style.color = 'var(--mute)';
+  (P.loc ? Promise.resolve(P.loc) : pinLocate()).then(function (loc) { return run('checkPin', P.pin, loc, P.dev); }).then(function (r) {
+    P.pin = ''; renderPinBox();
+    if (r.ok) { show(true, '✓ Accesso consentito' + (r.label ? ' · ' + r.label : '') + ' — spingi il portone'); loadLog(); return; }
+    var M = { invalid: 'PIN non valido' + (r.left > 0 ? ' · tentativi rimasti ' + r.left : ''), expired: 'Pass scaduto',
+      notyet: 'Pass non ancora attivo', used: 'PIN già utilizzato', far: 'Sei troppo lontano dal portone (' + r.dist + ' m)',
+      noloc: 'Serve la posizione attiva', locked: 'Troppi PIN errati: riprova ' + (r.until ? 'dopo le ' + hhmm(r.until) : 'più tardi'),
+      setup: 'Posizione del portone non configurata', door: 'Il portone non risponde' };
+    show(false, M[r.reason] || 'Accesso negato');
+    if (r.reason === 'far' || r.reason === 'noloc') P.loc = null;
+  }).catch(function (e) { show(false, errMsg(e)); renderPinBox(); });
+};
+
+// ---------- chiamate tra persone ----------
+function renderPeople() {
+  var q = $('#pq').value.trim().toLowerCase();
+  var all = (BOOT.people || []).filter(function (p) { return !q || (p.name + ' ' + p.detail).toLowerCase().indexOf(q) >= 0; });
+  all.sort(function (a, b) { return (b.real ? 1 : 0) - (a.real ? 1 : 0) || a.name.localeCompare(b.name, 'it'); });
+  var list = all;
+  $('#plist2').innerHTML = (list.length ? list.map(function (p) {
+    return '<div class="sub-item" data-id="' + esc(p.id) + '" style="margin-left:0"><div class="av"><i class="ti ti-user"></i></div>' +
+      '<span class="tx">' + esc(p.name) + '<div class="muted" style="font-weight:400">' + esc(p.detail) + '</div></span>' +
+      '<i class="chev ti ti-video"></i></div>';
+  }).join('') : '<p class="muted">Nessuna persona trovata.</p>') +
+    (list.length < all.length ? '<button class="btn ghost" id="pmore" style="margin-top:10px">Mostra tutte (' + all.length + ')</button>' : '');
+  var more = $('#pmore'); if (more) more.onclick = function () { S.showAll = true; renderPeople(); };
+  $('#plist2').querySelectorAll('.sub-item').forEach(function (el) { el.onclick = function () { callPerson(el.dataset.id); }; });
+}
+$('#pq').oninput = renderPeople;
+renderPeople();
+
+function callPerson(id) {
+  if (S.out || S.current) return toast('Sei già in una chiamata');
+  var p = (BOOT.people || []).find(function (x) { return x.id === id; });
+  S.out = { id: null, name: p.name, talking: false, until: Date.now() + BOOT.callTimeout * 1000 };
+  VC.unlockAudio($('#oAudio'));
+  $('#outCall').classList.remove('hidden');
+  $('#oRemote').classList.add('hidden');
+  $('#oLocal').className = 'big mirror';
+  $('#omsg').classList.remove('hidden');
+  $('#otag').textContent = 'Tu';
+  $('#otitle').textContent = 'Sto chiamando…';
+  $('#osub').textContent = p.name;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  run('r_call', S.token, id).then(function (r) {
+    if (!S.out) { run('cancelCall', r.callId).catch(function () {}); return; }
+    S.out.id = r.callId;
+    S.outTimer = setInterval(outPoll, 2000);
+    return VC.join({
+      url: r.video.url, token: r.video.token, cam: true, mic: true,
+      local: $('#oLocal'), remote: $('#oRemote'), audio: $('#oAudio'),
+      onError: function (m) { $('#omsg').classList.remove('hidden'); $('#omsg').querySelector('span').textContent = m; },
+      onRemote: function (on) {
+        $('#oRemote').classList.toggle('hidden', !on);
+        $('#oLocal').className = on ? 'pip mirror' : 'big mirror';
+        $('#otag').textContent = on ? S.out && S.out.name || '' : 'Tu';
+      }
+    }).then(function () { $('#omsg').classList.add('hidden'); });
+  }).catch(function (e) {
+    $('#omsg').classList.remove('hidden');
+    $('#omsg').querySelector('span').textContent = errMsg(e);
+    toast(errMsg(e), 6000);
+  });
+}
+function outPoll() {
+  if (!S.out || !S.out.id) return;
+  if (!S.out.talking) $('#ocount').textContent = Math.max(0, Math.round((S.out.until - Date.now()) / 1000)) + ' s';
+  if (S.outBusy) return;
+  S.outBusy = true;
+  run('getCallStatus', S.out.id).then(function (st) {
+    if (!S.out) return;
+    if (st.status === 'ringing') return;
+    if (st.status === 'talking') {
+      if (!S.out.talking) { S.out.talking = true; $('#otitle').innerHTML = '<span class="dotlive"></span>In chiamata'; $('#ocount').textContent = ''; }
+      return;
+    }
+    var M = { denied: S.out.name + ' ha rifiutato', timeout: 'Nessuna risposta', ended: 'Chiamata terminata' };
+    endOut(M[st.status] || 'Chiamata terminata');
+  }).catch(function () {}).then(function () { S.outBusy = false; });
+}
+function endOut(msg) {
+  clearInterval(S.outTimer);
+  VC.leave();
+  ['oRemote', 'oLocal', 'oAudio'].forEach(function (id) { try { $('#' + id).srcObject = null; } catch (e) {} });
+  S.out = null;
+  $('#outCall').classList.add('hidden');
+  $('#ocount').textContent = '';
+  if (msg) toast(msg, 4000);
+  loadLog();
+}
+$('#ohang').onclick = function () {
+  var id = S.out && S.out.id;
+  endOut('Chiamata terminata');
+  if (id) run('cancelCall', id).catch(function () {});
+};
+
+// ---------- pass ----------
+function toInput(d) {
+  var p = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function preset(k) {
+  var now = new Date(), a, b;
+  if (k === '2h') { a = now; b = new Date(now.getTime() + 2 * 3600e3); }
+  else if (k === 'today') { a = new Date(now); a.setHours(9, 0, 0, 0); if (a < now) a = now; b = new Date(now); b.setHours(19, 0, 0, 0); if (b <= a) b = new Date(a.getTime() + 2 * 3600e3); }
+  else if (k === 'tomorrow') { a = new Date(now); a.setDate(a.getDate() + 1); a.setHours(9, 0, 0, 0); b = new Date(a); b.setHours(19, 0, 0, 0); }
+  else { a = now; b = new Date(now.getTime() + 7 * 24 * 3600e3 - 60e3); }
+  $('#pfrom').value = toInput(a); $('#pto').value = toInput(b);
+}
+document.querySelectorAll('.chip[data-pre]').forEach(function (el) { el.onclick = function () { preset(el.dataset.pre); }; });
+preset('2h');
+
+function windowText(p) { return 'da ' + dayTime(p.start) + ' a ' + dayTime(p.end); }
+function shareText(p) {
+  return 'Ciao! Per entrare al ' + BOOT.building + ' (' + BOOT.address + ') inquadra il QR sul portone, scegli "Ho un PIN" e inserisci ' +
+    p.pin + '. Valido ' + windowText(p) + (p.singleUse ? ', per un solo ingresso' : '') + '. Serve la posizione attiva sul telefono.';
+}
+
+$('#pgo').onclick = function () {
+  var start = new Date($('#pfrom').value).getTime(), end = new Date($('#pto').value).getTime();
+  if (!start || !end) return toast('Imposta la fascia oraria');
+  $('#pgo').disabled = true;
+  run('r_createPass', S.token, { label: $('#plabel').value, start: start, end: end, singleUse: $('#psingle').checked })
+    .then(function (p) {
+      S.lastPass = p;
+      $('#pnewLabel').textContent = p.label;
+      $('#pnewPin').textContent = p.pin;
+      $('#pnewWin').textContent = windowText(p) + (p.singleUse ? ' · un solo ingresso' : '');
+      $('#pnewWa').href = 'https://wa.me/?text=' + encodeURIComponent(shareText(p));
+      $('#pnew').classList.remove('hidden');
+      $('#plabel').value = '';
+      loadPasses(); loadLog();
+    }).catch(function (e) { toast(errMsg(e)); })
+    .then(function () { $('#pgo').disabled = false; });
+};
+$('#pnewCopy').onclick = function () { if (S.lastPass) copyText(shareText(S.lastPass)); };
+
+function passState(p) {
+  var now = Date.now();
+  if (p.singleUse && p.uses > 0) return ['Usato', 'm'];
+  if (now > p.end) return ['Scaduto', 'm'];
+  if (now < p.start) return ['Programmato', 'b'];
+  return ['Attivo', 'g'];
+}
+var PASSES = [];
+function loadPasses() {
+  run('r_listPasses', S.token).then(function (list) {
+    PASSES = list;
+    $('#plist').innerHTML = list.length ? list.map(function (p, i) {
+      var st = passState(p);
+      return '<div class="passrow"><div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div><b style="font-size:18px;letter-spacing:2px">' + esc(p.pin) + '</b> · ' + esc(p.label) + '</div>' +
+        '<span class="pill ' + st[1] + '">' + st[0] + '</span></div>' +
+        '<div class="muted" style="margin:4px 0 8px">' + esc(windowText(p)) + (p.singleUse ? ' · monouso' : ' · ingressi illimitati') +
+        (p.uses ? ' · usato ' + p.uses + 'x' : '') + '</div>' +
+        '<a class="btn sm ghost" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(shareText(p)) + '">Invia</a> ' +
+        '<button class="btn sm ghost" data-rev="' + i + '">Revoca</button></div>';
+    }).join('') : '<p class="muted">Nessun pass. Creane uno per far entrare qualcuno senza dover rispondere.</p>';
+    $('#plist').querySelectorAll('[data-rev]').forEach(function (b) {
+      b.onclick = function () {
+        var p = PASSES[Number(b.dataset.rev)];
+        if (!confirm('Revocare il PIN ' + p.pin + ' (' + p.label + ')?')) return;
+        run('r_revokePass', S.token, p.pin).then(function () { toast('Pass revocato'); loadPasses(); loadLog(); })
+          .catch(function (e) { toast(errMsg(e)); });
+      };
+    });
+  }).catch(function (e) { $('#plist').innerHTML = '<p class="muted">' + esc(errMsg(e)) + '</p>'; });
+}
+function loadLog() {
+  run('r_log', S.token).then(function (L) {
+    $('#log').innerHTML = L.length ? L.map(function (x) { return logRow(x, true); }).join('') : '<p class="muted">Nessun evento.</p>';
+  }).catch(function () {});
+}
+
+S.pollTimer = setInterval(poll, 3000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+poll(); loadPasses(); loadLog();
+}
+
+function start(p) {
+  p.then(function (b) {
+    BOOT = b;
+    document.getElementById('boot').remove();
+    document.getElementById('page').classList.remove('hidden');
+    renderBrand();
+    main();
+    renderBrand();
+    loadBrand();
+  }).catch(function (e) {
+    console.error(e);
+    var m = document.getElementById('bootMsg');
+    if (m) {
+      m.innerHTML = '<div class="login"><p>' + esc(errMsg(e)) + '</p>' +
+        (e && e.denied ? '<button class="btn ghost" style="width:auto" onclick="AUTH.logout()">Accedi con un altro account</button>' : '') + '</div>';
+    } else toast(errMsg(e), 6000);
+  });
+}
+var T = qs('t');
+AUTH.ready().then(function () {
+  if (T) return T;
+  return run('me').then(function (me) {           // nessun link: riconosce la persona dall'account Google
+    if (me && me.member) return me.token;
+    throw new Error('Il tuo account Google non è collegato a nessuna persona dell’edificio.');
+  });
+}).then(function (tok) {
+  start(run('r_boot', tok).then(function (b) { b.token = tok; b.callId = qs('c'); return b; }));
+}).catch(function (e) {
+  document.getElementById('bootMsg').innerHTML = '<div class="login"><p>' + esc(errMsg(e)) + '</p>' +
+    '<a class="btn ghost" style="width:auto" href="index.html?v=1">Vai al citofono</a></div>';
+});
+</script>
+</body>
+</html>

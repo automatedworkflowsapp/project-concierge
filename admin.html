@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F6F8FC">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Concierge · Admin</title>
+  <link rel="icon" href="icon-180.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="app.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+</head>
+<body>
+<div id="boot" class="wrap"><div class="top"><div class="brand" id="brand"></div></div><div class="loading" id="bootMsg">Caricamento…</div></div>
+<div id="page" class="hidden">
+<div class="wrap">
+  <div class="top"><div class="brand" id="brand"></div><button class="info" id="infoBtn" aria-label="Come funziona"><i class="ti ti-info-small"></i></button></div>
+  <div id="help" class="card hidden"></div>
+  <h1 id="bname"></h1>
+  <p class="sub">Amministrazione · configurazione MVP</p>
+
+  <div class="card">
+    <h3><i class="ti ti-map-pin"></i> Posizione del portone</h3>
+    <div class="muted" id="locInfo">Caricamento…</div>
+    <button class="btn" id="setLoc" style="margin-top:12px">Usa la mia posizione attuale</button>
+    <p class="muted">Fallo stando davanti al portone, all’aperto. I PIN funzionano solo entro <span id="radius"></span> m da qui.</p>
+  </div>
+
+  <div class="card center">
+    <h3>QR da affiggere al portone</h3>
+    <div id="qr" style="background:#fff;border-radius:14px;padding:12px;display:inline-block"></div>
+    <p class="muted">Tieni premuto sul QR per salvarlo e stamparlo.</p>
+    <a class="btn ghost" id="visitorLink" target="_blank" rel="noopener">Apri come visitatore</a>
+  </div>
+
+  <div class="card">
+    <h3>Portone</h3>
+    <div class="muted">Modalità: <span class="pill b" id="doorMode"></span> · WhatsApp: <span class="pill b" id="waMode"></span></div>
+    <button class="btn ghost" id="testDoor" style="margin-top:12px">Test apertura</button>
+  </div>
+
+  <div class="card">
+    <h3>Appartamenti, persone e link personali</h3>
+    <p class="muted" style="margin-top:0">Ogni link è un accesso dedicato: chi lo ha può aprire il portone. Se finisce nelle mani sbagliate, rigeneralo.</p>
+    <div id="res"></div>
+  </div>
+
+  <div class="card">
+    <h3>Registro accessi</h3>
+    <div id="log"></div>
+  </div>
+</div>
+</div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+var BOOT;
+function main() {
+window.HELP = '<p class="muted">Imposta la posizione del portone stando davanti all\u2019ingresso, stampa il QR e manda a ogni persona il suo link personale.</p>';
+var K = BOOT.key, DATA = null;
+$('#bname').textContent = BOOT.building;
+$('#radius').textContent = BOOT.radius;
+
+function load() {
+  run('a_overview', K).then(function (d) {
+    DATA = d;
+    $('#locInfo').innerHTML = d.loc
+      ? 'Impostata il ' + esc(dayTime(d.loc.set)) + ' · precisione ±' + d.loc.acc + ' m<br>' +
+        '<a target="_blank" rel="noopener" href="https://maps.google.com/?q=' + d.loc.lat + ',' + d.loc.lng + '">Vedi sulla mappa</a>'
+      : '<span class="pill a">Non impostata</span> — i PIN non funzionano finché non la imposti.';
+    $('#doorMode').textContent = d.door;
+    $('#waMode').textContent = d.wa;
+    $('#visitorLink').href = d.visitorUrl;
+    drawQr(d.visitorUrl);
+    var M = [];
+    $('#res').innerHTML = d.units.map(function (u) {
+      return '<div class="passrow"><div><b>' + esc(u.surname) + '</b> <span class="muted">' + esc(u.detail) + '</span></div>' +
+        u.members.map(function (m) {
+          var i = M.push(m) - 1;
+          return '<div style="margin:10px 0 0 10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+            '<span>' + esc(m.name) + (m.listed ? '' : ' <span class="pill m">solo famiglia</span>') +
+            (m.email ? '<div class="muted">' + esc(m.email) + '</div>' : '') + '</span>' +
+            '<span class="pill ' + (m.hasPhone ? 'g' : 'm') + '">' + (m.hasPhone ? 'WhatsApp' : 'no tel.') + '</span></div>' +
+            '<div style="margin-top:6px">' +
+            '<button class="btn sm ghost" data-a="copy" data-i="' + i + '">Copia link</button> ' +
+            '<a class="btn sm ghost" target="_blank" rel="noopener" href="' + esc(m.link) + '">Apri</a> ' +
+            (m.hasPhone ? '<button class="btn sm ghost" data-a="wa" data-i="' + i + '">Test WA</button> ' : '') +
+            '<button class="btn sm ghost" data-a="reset" data-i="' + i + '">Rigenera</button></div></div>';
+        }).join('') + '</div>';
+    }).join('');
+    $('#res').querySelectorAll('[data-a]').forEach(function (b) { b.onclick = function () { act(b.dataset.a, M[Number(b.dataset.i)]); }; });
+    $('#log').innerHTML = d.log.length ? d.log.map(function (x) { return logRow(x, true); }).join('') : '<p class="muted">Nessun evento.</p>';
+  }).catch(function (e) { toast(errMsg(e)); });
+}
+
+function act(a, r) {
+  if (a === 'copy') return copyText(r.link);
+  if (a === 'wa') return run('a_testWhatsApp', K, r.id).then(function (x) {
+    toast(x.ok ? 'Messaggio inviato a ' + r.name : 'Errore: ' + (x.error || 'WhatsApp disattivato'), 6000);
+  }).catch(function (e) { toast(errMsg(e)); });
+  if (a === 'reset') {
+    if (!confirm('Rigenerare il link di ' + r.name + '? Il vecchio smetterà di funzionare.')) return;
+    run('a_resetLink', K, r.id).then(function () { toast('Nuovo link creato'); load(); }).catch(function (e) { toast(errMsg(e)); });
+  }
+}
+
+function drawQr(url) {
+  if (typeof qrcode === 'undefined' || !url) { $('#qr').innerHTML = '<span style="color:#000">QR non disponibile</span>'; return; }
+  var qr = qrcode(0, 'M');
+  qr.addData(url); qr.make();
+  $('#qr').innerHTML = '<img alt="QR" style="width:220px;height:220px;display:block" src="' + qr.createDataURL(8, 2) + '">';
+}
+
+$('#setLoc').onclick = function () {
+  $('#setLoc').disabled = true;
+  $('#setLoc').textContent = 'Rilevo la posizione…';
+  getLoc(20000).then(function (l) {
+    if (!l || l.err) throw new Error(l && l.err === 1 ? 'Permesso di posizione negato' : 'Posizione non disponibile');
+    if (l.acc > 40 && !confirm('Precisione bassa (±' + Math.round(l.acc) + ' m). Salvare comunque?')) return null;
+    return run('a_setLocation', K, l);
+  }).then(function (x) { if (x) { toast('Posizione del portone salvata'); load(); } })
+    .catch(function (e) { toast(errMsg(e)); })
+    .then(function () { $('#setLoc').disabled = false; $('#setLoc').textContent = 'Usa la mia posizione attuale'; });
+};
+
+$('#testDoor').onclick = function () {
+  $('#testDoor').disabled = true;
+  run('a_testDoor', K).then(function (r) {
+    toast(r.ok ? (r.simulated ? 'Apertura simulata' : 'Portone aperto') + (r.warning ? ' (' + r.warning + ')' : '') : 'Errore: ' + r.error, 6000);
+    load();
+  }).catch(function (e) { toast(errMsg(e)); }).then(function () { $('#testDoor').disabled = false; });
+};
+
+load();
+}
+
+function start(p) {
+  p.then(function (b) {
+    BOOT = b;
+    document.getElementById('boot').remove();
+    document.getElementById('page').classList.remove('hidden');
+    renderBrand();
+    main();
+    renderBrand();
+    loadBrand();
+  }).catch(function (e) {
+    console.error(e);
+    var m = document.getElementById('bootMsg');
+    if (m) {
+      m.innerHTML = '<div class="login"><p>' + esc(errMsg(e)) + '</p>' +
+        (e && e.denied ? '<button class="btn ghost" style="width:auto" onclick="AUTH.logout()">Accedi con un altro account</button>' : '') + '</div>';
+    } else toast(errMsg(e), 6000);
+  });
+}
+var K = qs('k');
+if (!K) document.getElementById('bootMsg').textContent = 'Accesso negato.';
+else AUTH.ready().then(function () { start(run('a_overview', K).then(function (d) { return { key: K, building: d.building, radius: d.radius }; })); });
+</script>
+</body>
+</html>
